@@ -30,6 +30,8 @@
 </template>
 
 <script>
+    const fs = require('fs');
+
     export default {
       data() {
         return {
@@ -47,6 +49,33 @@
         },
         parse() {
           this.parsing = true;
+          const promises = [];
+          this.dropFiles.forEach((file) => {
+            promises.push(this.parseFile(file));
+          });
+          Promise.all(promises).then((values) => {
+            values.forEach((value) => {
+              this.parsedList = [...this.parsedList, ...value];
+            });
+            this.parsing = false;
+            this.$toast.open({
+              message: `Parsed ${this.parsedList.length} usernames`,
+              type: 'is-success',
+            });
+          }).catch((err) => {
+            this.$toast.open({
+              message: `Something went wrong: ${err}`,
+              type: 'is-danger',
+            });
+          });
+        },
+        parseFile(file) {
+          return new Promise((resolve, reject) => {
+            fs.readFile(file.path, (err, data) => {
+              if (err) reject(err);
+              resolve(data.toString().split(/\r?\n/));
+            });
+          });
         },
       },
       name: 'index',
