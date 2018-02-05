@@ -16,7 +16,7 @@
           <footer class="footer">
               <div class="container">
                   <div class="content has-text-centered">
-                      Made with <i class="fas fa-heart" style="color:#DA2444"></i> by <a @click="open('https://github.com/RumbleFrog')">RumbleFrog</a>
+                      Made with <i class="fas fa-heart" style="color:#DA2444"></i> by <a @click="open('https://hackforums.net/member.php?action=profile&uid=2636502')">RumbleFrog</a>
                   </div>
               </div>
           </footer>
