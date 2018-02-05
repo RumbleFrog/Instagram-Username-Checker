@@ -18,19 +18,25 @@
             </b-field>
 
             <div class="field" v-for="(file, index) in dropFiles" :key="index">
-                <b-tag type="is-primary">
+                <b-tag type="is-info">
                     {{ file.name }}
                     <button class="delete is-small" type="button" @click="deleteDropFile(index)"></button>
                 </b-tag>
             </div>
 
             <button class="button is-primary" :class="{'is-loading': parsing}" @click="parse()">Parse Files</button>
+
+            <button class="button is-danger" v-if="parsedList.length > 0 && !parsing && !checking">Check {{ parsedList.length }} usernames</button>
+        </div>
+        <div id="checking" v-if="checking">
+
         </div>
     </div>
 </template>
 
 <script>
     const fs = require('fs');
+    const _ = require('lodash');
 
     export default {
       data() {
@@ -48,6 +54,7 @@
           this.dropFiles.splice(index, 1);
         },
         parse() {
+          this.parsedList = [];
           this.parsing = true;
           const promises = [];
           this.dropFiles.forEach((file) => {
@@ -55,11 +62,11 @@
           });
           Promise.all(promises).then((values) => {
             values.forEach((value) => {
-              this.parsedList = [...this.parsedList, ...value];
+              this.parsedList = _.uniqBy([...this.parsedList, ...value]);
             });
             this.parsing = false;
             this.$toast.open({
-              message: `Parsed ${this.parsedList.length} usernames`,
+              message: `Parsed ${this.parsedList.length} unique usernames`,
               type: 'is-success',
             });
           }).catch((err) => {
@@ -81,7 +88,3 @@
       name: 'index',
     };
 </script>
-
-<style scoped>
-
-</style>

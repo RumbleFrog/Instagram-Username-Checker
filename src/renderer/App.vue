@@ -16,7 +16,7 @@
           <footer class="footer">
               <div class="container">
                   <div class="content has-text-centered">
-                      Made with <i class="fas fa-heart" style="color:#DA2444"></i> by <a href="https://github.com/RumbleFrog" target="_blank">RumbleFrog</a>
+                      Made with <i class="fas fa-heart" style="color:#DA2444"></i> by <a @click="open('https://github.com/RumbleFrog')">RumbleFrog</a>
                   </div>
               </div>
           </footer>
@@ -26,6 +26,11 @@
 
 <script>
   export default {
+    methods: {
+      open(link) {
+        this.$electron.shell.openExternal(link);
+      },
+    },
     name: 'instagram-checker',
   };
 </script>
