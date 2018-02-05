@@ -47,6 +47,7 @@
           parsedList: [],
           available: [],
           unavailable: [],
+          selected: [],
         };
       },
       methods: {
