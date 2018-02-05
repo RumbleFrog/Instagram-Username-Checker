@@ -192,6 +192,13 @@
           }).catch();
         },
       },
+      watch: {
+        dropFiles: () => {
+          if (this.parsing) {
+            this.parsing = false;
+          }
+        },
+      },
       name: 'index',
     };
 </script>
