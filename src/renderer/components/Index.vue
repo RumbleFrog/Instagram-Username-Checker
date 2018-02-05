@@ -26,7 +26,7 @@
 
             <button class="button is-primary" :class="{'is-loading': parsing}" @click="parse()">Parse Files</button>
 
-            <button class="button is-danger" v-if="parsedList.length > 0 && !parsing && !checking">Check {{ parsedList.length }} usernames</button>
+            <button class="button is-danger" v-if="parsedList.length > 0 && !parsing && !checking" @click="check()">Check {{ parsedList.length }} usernames</button>
         </div>
         <div id="checking" v-if="checking">
 
@@ -36,6 +36,7 @@
                 <div>Test <i class="fas fa-check" style="color:green"></i></div>
                 <div>Test <i class="fas fa-spinner fa-pulse"></i></div>
                 <div>Test <i class="fas fa-times" style="color:#E0001B"></i></div>
+                <div>Test <i class="fas fa-question"></i></div>
             </div>
         </div>
     </div>
@@ -44,6 +45,7 @@
 <script>
     const fs = require('fs');
     const _ = require('lodash');
+    const request = require('request');
 
     export default {
       data() {
@@ -54,6 +56,7 @@
           parsedList: [],
           available: [],
           unavailable: [],
+          processing: {},
         };
       },
       methods: {
@@ -89,6 +92,31 @@
               if (err) reject(err);
               resolve(data.toString().split(/\r?\n/));
             });
+          });
+        },
+        check() {
+          this.checking = true;
+          const promises = [];
+          this.parsedList.forEach((un) => {
+            promises.push(this.checkUsername(un));
+          });
+          Promise.all(promises).then((values) => {
+            console.log(`done ${values}`);
+            this.checking = false;
+          });
+        },
+        checkUsername(un) {
+          return new Promise((resolve, reject) => {
+            this.processing[un] = '<i class="fas fa-spinner fa-pulse"></i>';
+            request({
+              method: 'HEAD',
+              url: `https://www.instagram.com/${un}`,
+              headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36' },
+              timeout: 500,
+            }).on('response', (response) => {
+              console.log(response);
+              resolve();
+            }).on('error', err => reject(err));
           });
         },
       },
