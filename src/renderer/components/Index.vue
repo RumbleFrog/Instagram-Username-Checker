@@ -34,14 +34,30 @@
                     <div v-for="(value, key) in processing" v-html="renderItem(key, value)"></div>
                 </div>
             </div>
+            <b-field class="has-text-centered" style="display:inline-block;">
+                <p class="control">
+                    <b-dropdown>
+                        <button class="button is-primary" slot="trigger">
+                            <span>Export</span>
+                            <b-icon icon="caret-down"></b-icon>
+                        </button>
+
+                        <b-dropdown-item @click="exportCheck(available)">Available Usernames</b-dropdown-item>
+                        <b-dropdown-item @click="exportCheck(unavailable)">Unavailable Usernames</b-dropdown-item>
+                        <b-dropdown-item @click="exportCheck(unknown)">Unknown Usernames</b-dropdown-item>
+                    </b-dropdown>
+                </p>
+            </b-field>
         </div>
     </div>
 </template>
 
 <script>
+    const os = require('os');
     const fs = require('fs');
     const _ = require('lodash');
     const request = require('request');
+    const { dialog } = require('electron').remote; // eslint-disable-line import/no-extraneous-dependencies
 
     export default {
       data() {
@@ -134,6 +150,28 @@
         },
         renderItem(un, ico) {
           return `${un} ${ico}`;
+        },
+        askSaveLocation() {
+          return new Promise((resolve, reject) => {
+            dialog.showSaveDialog({
+              filters: [{ name: 'Text File', extensions: ['txt'] }],
+            }, (filename) => {
+              if (filename == null) reject();
+              resolve(filename);
+            });
+          });
+        },
+        exportCheck(data) {
+          this.askSaveLocation().then((loc) => {
+            fs.writeFile(loc, data.join(os.EOL), (err) => {
+              if (err) {
+                this.$toast.open({
+                  message: `Something went wrong while saving: ${err}`,
+                  type: 'is-danger',
+                });
+              }
+            });
+          }).catch(); // eslint-disable-line no-undef
         },
       },
       name: 'index',
