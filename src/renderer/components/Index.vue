@@ -31,6 +31,13 @@
         <div id="checking" v-if="checking">
 
         </div>
+        <div class="columns">
+            <div class="column is-half is-offset-one-quarter box" style="overflow-y:scroll">
+                <div>Test</div>
+                <div>Test</div>
+                <div>Test</div>
+            </div>
+        </div>
     </div>
 </template>
 
