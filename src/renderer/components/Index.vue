@@ -31,11 +31,11 @@
         <div id="checking" v-if="checking">
 
         </div>
-        <div class="columns">
-            <div class="column is-half is-offset-one-quarter box" style="overflow-y:scroll">
-                <div>Test</div>
-                <div>Test</div>
-                <div>Test</div>
+        <div class="columns has-text-left">
+            <div class="column is-2 is-offset-5 box" style="overflow-y:scroll">
+                <div>Test <i class="fas fa-check" style="color:green"></i></div>
+                <div>Test <i class="fas fa-spinner fa-pulse"></i></div>
+                <div>Test <i class="fas fa-times" style="color:#E0001B"></i></div>
             </div>
         </div>
     </div>
