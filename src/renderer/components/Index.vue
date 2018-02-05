@@ -28,15 +28,11 @@
 
             <button class="button is-danger" v-if="parsedList.length > 0 && !parsing && !checking" @click="check()">Check {{ parsedList.length }} usernames</button>
         </div>
-        <div id="checking" v-if="checking">
-
-        </div>
-        <div class="columns has-text-left">
-            <div class="column is-2 is-offset-5 box" style="overflow-y:scroll">
-                <div>Test <i class="fas fa-check" style="color:green"></i></div>
-                <div>Test <i class="fas fa-spinner fa-pulse"></i></div>
-                <div>Test <i class="fas fa-times" style="color:#E0001B"></i></div>
-                <div>Test <i class="fas fa-question"></i></div>
+        <div id="result" v-if="Object.keys(processing).length > 0" style="margin-top:2%">
+            <div class="columns has-text-left">
+                <div class="column is-2 is-offset-5 box" style="overflow-y:scroll">
+                    <div v-for="(value, key) in processing" v-html="renderItem(key, value)"></div>
+                </div>
             </div>
         </div>
     </div>
@@ -56,6 +52,7 @@
           parsedList: [],
           available: [],
           unavailable: [],
+          unknown: [],
           processing: {},
         };
       },
@@ -96,28 +93,47 @@
         },
         check() {
           this.checking = true;
+          this.iteration = 1;
           const promises = [];
           this.parsedList.forEach((un) => {
-            promises.push(this.checkUsername(un));
+            // promises.push(this.checkUsername(un));
+            setTimeout(() => {
+              promises.push(this.checkUsername(un));
+            }, this.iteration * 100);
           });
-          Promise.all(promises).then((values) => {
-            console.log(`done ${values}`);
+          Promise.all(promises).then(() => {
             this.checking = false;
           });
         },
         checkUsername(un) {
           return new Promise((resolve, reject) => {
-            this.processing[un] = '<i class="fas fa-spinner fa-pulse"></i>';
+            this.$set(this.processing, un, '<i class="fas fa-spinner fa-pulse"></i>');
             request({
-              method: 'HEAD',
-              url: `https://www.instagram.com/${un}`,
+              method: 'GET',
+              url: `https://www.instagram.com/${un}/`,
               headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36' },
               timeout: 500,
             }).on('response', (response) => {
-              console.log(response);
+              if (response.statusCode === 200) {
+                this.$set(this.processing, un, '<i class="fas fa-times" style="color:#E0001B"></i>');
+                this.unavailable.push(un);
+              } else if (response.statusCode === 404) {
+                this.$set(this.processing, un, '<i class="fas fa-check" style="color:green"></i>');
+                this.available.push(un);
+              }
               resolve();
-            }).on('error', err => reject(err));
+            }).on('error', (err) => {
+              if (err.code === 'ETIMEDOUT') {
+                this.$set(this.processing, un, '<i class="fas fa-question"></i>');
+                this.unknown.push(un);
+              } else {
+                reject(err);
+              }
+            });
           });
+        },
+        renderItem(un, ico) {
+          return `${un} ${ico}`;
         },
       },
       name: 'index',
