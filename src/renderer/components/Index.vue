@@ -1,15 +1,12 @@
 <template>
     <div class="container has-text-centered">
-        <div id="parsing" v-if="checking == false">
+        <div id="parsing" v-if="!checking">
             <b-field>
                 <b-upload v-model="dropFiles" multiple drag-drop accept="text/plain">
                     <section class="section">
                         <div class="content has-text-centered">
                             <p>
-                                <b-icon
-                                        icon="upload"
-                                        size="is-large">
-                                </b-icon>
+                                <b-icon icon="upload" size="is-large"></b-icon>
                             </p>
                             <p>Drop your username lists here or click to upload</p>
                         </div>
@@ -45,11 +42,23 @@
                             <span>Export</span>
                             <b-icon icon="caret-down"></b-icon>
                         </button>
-                        <b-dropdown-item @click="exportCheck(available)">Available Usernames</b-dropdown-item>
-                        <b-dropdown-item @click="exportCheck(unavailable)">Unavailable Usernames</b-dropdown-item>
-                        <b-dropdown-item @click="exportCheck(unknown)">Unknown Usernames</b-dropdown-item>
+                        <b-dropdown-item @click="exportCheck(available)">
+                            Available Usernames
+                            <b-tag type="is-success">{{ this.available.length }}</b-tag>
+                        </b-dropdown-item>
+                        <b-dropdown-item @click="exportCheck(unavailable)">
+                            Unavailable Usernames
+                            <b-tag type="is-danger">{{ this.unavailable.length }}</b-tag>
+                        </b-dropdown-item>
+                        <b-dropdown-item @click="exportCheck(unknown)">
+                            Unknown Usernames
+                            <b-tag type="is-dark">{{ this.unknown.length }}</b-tag>
+                        </b-dropdown-item>
                     </b-dropdown>
                 </p>
+            </b-field>
+            <b-field v-if="checking">
+                <button class="button is-danger" @click="askToStop=true">Stop Checking</button>
             </b-field>
         </div>
     </div>
@@ -76,6 +85,7 @@
           processing: {},
           connections: 0,
           maxConnections: 10,
+          askToStop: false,
         };
       },
       methods: {
@@ -116,19 +126,17 @@
         check() {
           this.checking = true;
           this.iteration = 0;
-          const promises = [];
           const loop = setInterval(() => {
             if (this.connections < this.maxConnections) {
-              promises.push(this.checkUsername(this.parsedList[this.iteration]));
+              this.checkUsername(this.parsedList[this.iteration]);
               this.iteration += 1;
             }
-            if (this.iteration >= this.parsedList.length) {
+            if (this.iteration >= this.parsedList.length || this.askToStop) {
               clearInterval(loop);
+              this.checking = false;
+              this.askToStop = false;
             }
           }, 100);
-          Promise.all(promises).then(() => {
-            this.checking = false;
-          }).catch();
         },
         checkUsername(un) {
           return new Promise((resolve, reject) => {
