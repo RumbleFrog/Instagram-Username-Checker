@@ -1,6 +1,6 @@
 {
   "name": "instagram-checker",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "author": "RumbleFrog <xxlosttechxx@gmail.com>",
   "description": "Checks the availability of instagram usernames",
   "license": "MIT",
@@ -22,7 +22,7 @@
     "postinstall": "npm run lint:fix"
   },
   "build": {
-    "productName": "IG Username Checker",
+    "productName": "Instagram Checker",
     "appId": "org.rumblefrog.instagram-checker",
     "copyright": "Copyright © 2018 ${author}",
     "directories": {
@@ -50,7 +50,8 @@
       "icon": "build/icons/icon.icns"
     },
     "win": {
-      "icon": "build/icons/icon.ico"
+      "icon": "build/icons/icon.ico",
+      "target": "portable"
     },
     "linux": {
       "icon": "build/icons"

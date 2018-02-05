@@ -30,7 +30,11 @@
         </div>
         <div id="result" v-if="Object.keys(processing).length > 0" style="margin-top:2%">
             <div class="columns has-text-left">
-                <div class="column is-2 is-offset-5 box" style="overflow-y:scroll">
+                <div class="column is-2 is-offset-5 box" style="overflow-y:scroll;max-height:200px;">
+                    <i class="fas fa-spinner fa-pulse" data-fa-symbol="loading"></i>
+                    <i class="fas fa-times" style="color:#E0001B" data-fa-symbol="unavailable"></i>
+                    <i class="fas fa-check" style="color:green" data-fa-symbol="available"></i>
+                    <i class="fas fa-question" data-fa-symbol="unknown"></i>
                     <div v-for="(value, key) in processing" v-html="renderItem(key, value)"></div>
                 </div>
             </div>
@@ -41,7 +45,6 @@
                             <span>Export</span>
                             <b-icon icon="caret-down"></b-icon>
                         </button>
-
                         <b-dropdown-item @click="exportCheck(available)">Available Usernames</b-dropdown-item>
                         <b-dropdown-item @click="exportCheck(unavailable)">Unavailable Usernames</b-dropdown-item>
                         <b-dropdown-item @click="exportCheck(unknown)">Unknown Usernames</b-dropdown-item>
@@ -57,6 +60,7 @@
     const fs = require('fs');
     const _ = require('lodash');
     const request = require('request');
+    const https = require('https');
     const { dialog } = require('electron').remote; // eslint-disable-line import/no-extraneous-dependencies
 
     export default {
@@ -70,6 +74,8 @@
           unavailable: [],
           unknown: [],
           processing: {},
+          connections: 0,
+          maxConnections: 10,
         };
       },
       methods: {
@@ -109,39 +115,51 @@
         },
         check() {
           this.checking = true;
-          this.iteration = 1;
+          this.iteration = 0;
           const promises = [];
-          this.parsedList.forEach((un) => {
-            // promises.push(this.checkUsername(un));
-            setTimeout(() => {
-              promises.push(this.checkUsername(un));
-            }, this.iteration * 100);
-          });
+          const loop = setInterval(() => {
+            if (this.connections < this.maxConnections) {
+              promises.push(this.checkUsername(this.parsedList[this.iteration]));
+              this.iteration += 1;
+            }
+            if (this.iteration >= this.parsedList.length) {
+              clearInterval(loop);
+            }
+          }, 100);
           Promise.all(promises).then(() => {
             this.checking = false;
-          });
+          }).catch();
         },
         checkUsername(un) {
           return new Promise((resolve, reject) => {
-            this.$set(this.processing, un, '<i class="fas fa-spinner fa-pulse"></i>');
-            request({
+            this.connections += 1;
+            this.$set(this.processing, un, '<svg class="svg-inline--fa fa-w-20"><use xlink:href="#loading"></use></svg>');
+            const pool = new https.Agent({ keepAlive: true });
+            const baseRequest = request.defaults({
               method: 'GET',
-              url: `https://www.instagram.com/${un}/`,
               headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36' },
+              agent: pool,
+              pool: { maxSockets: 10 },
               timeout: 500,
+            });
+            baseRequest({
+              url: `https://www.instagram.com/${un}/`,
             }).on('response', (response) => {
               if (response.statusCode === 200) {
-                this.$set(this.processing, un, '<i class="fas fa-times" style="color:#E0001B"></i>');
+                this.$set(this.processing, un, '<svg class="svg-inline--fa fa-w-20"><use xlink:href="#unavailable"></use></svg>');
                 this.unavailable.push(un);
+                this.connections -= 1;
               } else if (response.statusCode === 404) {
-                this.$set(this.processing, un, '<i class="fas fa-check" style="color:green"></i>');
+                this.$set(this.processing, un, '<svg class="svg-inline--fa fa-w-20"><use xlink:href="#available"></use></svg>');
                 this.available.push(un);
+                this.connections -= 1;
               }
               resolve();
             }).on('error', (err) => {
-              if (err.code === 'ETIMEDOUT') {
-                this.$set(this.processing, un, '<i class="fas fa-question"></i>');
+              if (err.code === 'ETIMEDOUT' || err.code === 'ESOCKETTIMEDOUT') {
+                this.$set(this.processing, un, '<svg class="svg-inline--fa fa-w-20"><use xlink:href="#unknown"></use></svg>');
                 this.unknown.push(un);
+                this.connections -= 1;
               } else {
                 reject(err);
               }
@@ -171,7 +189,7 @@
                 });
               }
             });
-          }).catch(); // eslint-disable-line no-undef
+          }).catch();
         },
       },
       name: 'index',
