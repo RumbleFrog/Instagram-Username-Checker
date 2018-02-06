@@ -135,7 +135,6 @@
           this.checking = true;
           this.iteration = 0;
           this.connections = 0;
-          // eslint-disable-next-line max-len
           this.initializeSession().then(() => {
             const loop = setInterval(() => {
               if (this.connections < this.maxConnections) {
