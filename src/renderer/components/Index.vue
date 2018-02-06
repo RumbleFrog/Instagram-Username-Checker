@@ -138,7 +138,7 @@
           this.initializeSession().then(() => {
             const loop = setInterval(() => {
               if (this.connections < this.maxConnections) {
-                this.checkUsername2(this.parsedList[this.iteration]);
+                this.checkUsername(this.parsedList[this.iteration]);
                 this.iteration += 1;
               }
               if (this.iteration >= this.parsedList.length || this.askToStop) {
