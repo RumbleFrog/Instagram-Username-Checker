@@ -54,6 +54,10 @@
                             Unknown Usernames
                             <b-tag type="is-dark">{{ this.unknown.length }}</b-tag>
                         </b-dropdown-item>
+                        <b-dropdown-item @click="exportCheck(getUnprocessed())">
+                            Unprocessed Usernames
+                            <b-tag type="is-white">{{ unprocessed.length }}</b-tag>
+                        </b-dropdown-item>
                     </b-dropdown>
                 </p>
             </b-field>
@@ -199,6 +203,9 @@
             });
           }).catch();
         },
+      },
+      computed: {
+        unprocessed: () => _.pullAll(this.parsedList, [...this.available, ...this.unavailable, ...this.unknown]), // eslint-disable-line max-len
       },
       watch: {
         dropFiles: () => {
