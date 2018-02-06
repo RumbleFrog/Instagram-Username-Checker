@@ -100,6 +100,11 @@
           this.dropFiles.splice(index, 1);
         },
         parse() {
+          setTimeout(() => {
+            if (this.parsing) {
+              this.parse();
+            }
+          }, 2000);
           this.parsedList = [];
           this.parsing = true;
           const promises = [];
@@ -258,13 +263,6 @@
           }).catch((e) => { // eslint-disable-line no-unused-vars
             // Cancelled
           });
-        },
-      },
-      watch: {
-        dropFiles: () => {
-          if (this.parsing) {
-            this.parsing = false;
-          }
         },
       },
       name: 'index',
