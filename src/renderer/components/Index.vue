@@ -44,19 +44,19 @@
                         </button>
                         <b-dropdown-item @click="exportCheck(available)">
                             Available Usernames
-                            <b-tag type="is-success">{{ this.available.length }}</b-tag>
+                            <b-tag type="is-success">{{ available.length }}</b-tag>
                         </b-dropdown-item>
                         <b-dropdown-item @click="exportCheck(unavailable)">
                             Unavailable Usernames
-                            <b-tag type="is-danger">{{ this.unavailable.length }}</b-tag>
+                            <b-tag type="is-danger">{{ unavailable.length }}</b-tag>
                         </b-dropdown-item>
                         <b-dropdown-item @click="exportCheck(unknown)">
                             Unknown Usernames
-                            <b-tag type="is-dark">{{ this.unknown.length }}</b-tag>
+                            <b-tag type="is-dark">{{ unknown.length }}</b-tag>
                         </b-dropdown-item>
-                        <b-dropdown-item @click="exportCheck(getUnprocessed())">
+                        <b-dropdown-item @click="exportCheck(unprocessed)">
                             Unprocessed Usernames
-                            <b-tag type="is-white">{{ unprocessed.length }}</b-tag>
+                            <b-tag type="is-link">{{ unprocessed.length }}</b-tag>
                         </b-dropdown-item>
                     </b-dropdown>
                 </p>
@@ -86,6 +86,7 @@
           available: [],
           unavailable: [],
           unknown: [],
+          unprocessed: [],
           processing: {},
           connections: 0,
           maxConnections: 10,
@@ -128,6 +129,7 @@
           });
         },
         check() {
+          this.unprocessed = this.parsedList.slice();
           this.checking = true;
           this.iteration = 0;
           const loop = setInterval(() => {
@@ -144,6 +146,7 @@
         },
         checkUsername(un) {
           return new Promise((resolve, reject) => {
+            const index = this.unprocessed.indexOf(un);
             this.connections += 1;
             this.$set(this.processing, un, '<svg class="svg-inline--fa fa-w-20"><use xlink:href="#loading"></use></svg>');
             const pool = new https.Agent({ keepAlive: true });
@@ -160,10 +163,12 @@
               if (response.statusCode === 200) {
                 this.$set(this.processing, un, '<svg class="svg-inline--fa fa-w-20"><use xlink:href="#unavailable"></use></svg>');
                 this.unavailable.push(un);
+                this.unprocessed.splice(index, 1);
                 this.connections -= 1;
               } else if (response.statusCode === 404) {
                 this.$set(this.processing, un, '<svg class="svg-inline--fa fa-w-20"><use xlink:href="#available"></use></svg>');
                 this.available.push(un);
+                this.unprocessed.splice(index, 1);
                 this.connections -= 1;
               }
               resolve();
@@ -171,6 +176,7 @@
               if (err.code === 'ETIMEDOUT' || err.code === 'ESOCKETTIMEDOUT') {
                 this.$set(this.processing, un, '<svg class="svg-inline--fa fa-w-20"><use xlink:href="#unknown"></use></svg>');
                 this.unknown.push(un);
+                this.unprocessed.splice(index, 1);
                 this.connections -= 1;
               } else {
                 reject(err);
@@ -201,11 +207,10 @@
                 });
               }
             });
-          }).catch();
+          }).catch((e) => { // eslint-disable-line no-unused-vars
+            // Cancelled
+          });
         },
-      },
-      computed: {
-        unprocessed: () => _.pullAll(this.parsedList, [...this.available, ...this.unavailable, ...this.unknown]), // eslint-disable-line max-len
       },
       watch: {
         dropFiles: () => {
