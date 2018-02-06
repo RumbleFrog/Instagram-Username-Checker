@@ -8,7 +8,7 @@
                             <p>
                                 <b-icon icon="upload" size="is-large"></b-icon>
                             </p>
-                            <p>Drop your username lists here or click to upload</p>
+                            <p>Drop your username lists here or click to parse</p>
                         </div>
                     </section>
                 </b-upload>
@@ -73,7 +73,7 @@
     const fs = require('fs');
     const _ = require('lodash');
     const request = require('request');
-    const https = require('https');
+    const Cookie = require('request-cookies').Cookie;
     const { dialog } = require('electron').remote; // eslint-disable-line import/no-extraneous-dependencies
 
     export default {
@@ -91,6 +91,8 @@
           connections: 0,
           maxConnections: 10,
           askToStop: false,
+          jar: request.jar(),
+          csrf: null,
         };
       },
       methods: {
@@ -132,56 +134,103 @@
           this.unprocessed = this.parsedList.slice();
           this.checking = true;
           this.iteration = 0;
-          const loop = setInterval(() => {
-            if (this.connections < this.maxConnections) {
-              this.checkUsername(this.parsedList[this.iteration]);
-              this.iteration += 1;
-            }
-            if (this.iteration >= this.parsedList.length || this.askToStop) {
-              clearInterval(loop);
-              this.checking = false;
-              this.askToStop = false;
-            }
-          }, 100);
+          this.connections = 0;
+          // eslint-disable-next-line max-len
+          this.initializeSession().then(() => {
+            const loop = setInterval(() => {
+              if (this.connections < this.maxConnections) {
+                this.checkUsername2(this.parsedList[this.iteration]);
+                this.iteration += 1;
+              }
+              if (this.iteration >= this.parsedList.length || this.askToStop) {
+                clearInterval(loop);
+                this.checking = false;
+                this.askToStop = false;
+              }
+            }, 100);
+          }).catch((err) => {
+            this.$toast.open({
+              message: `Something went wrong: ${err}`,
+              type: 'is-danger',
+            });
+          });
+        },
+        initializeSession() {
+          return new Promise((resolve, reject) => {
+            request({
+              method: 'GET',
+              uri: 'https://www.instagram.com/',
+              gzip: true,
+              jar: this.jar,
+              headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36',
+                'Accept-Language': 'en-US,en;q=0.9',
+                'Upgrade-Insecure-Requests': '1',
+              },
+            }, (err, res) => {
+              if (err) reject(err);
+              resolve(this.saveCSRF(res.headers));
+            });
+          });
         },
         checkUsername(un) {
           return new Promise((resolve, reject) => {
             const index = this.unprocessed.indexOf(un);
             this.connections += 1;
             this.$set(this.processing, un, '<svg class="svg-inline--fa fa-w-20"><use xlink:href="#loading"></use></svg>');
-            const pool = new https.Agent({ keepAlive: true });
-            const baseRequest = request.defaults({
-              method: 'GET',
-              headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36' },
-              agent: pool,
-              pool: { maxSockets: 10 },
-              timeout: 500,
-            });
-            baseRequest({
-              url: `https://www.instagram.com/${un}/`,
-            }).on('response', (response) => {
-              if (response.statusCode === 200) {
-                this.$set(this.processing, un, '<svg class="svg-inline--fa fa-w-20"><use xlink:href="#unavailable"></use></svg>');
-                this.unavailable.push(un);
-                this.unprocessed.splice(index, 1);
-                this.connections -= 1;
-              } else if (response.statusCode === 404) {
-                this.$set(this.processing, un, '<svg class="svg-inline--fa fa-w-20"><use xlink:href="#available"></use></svg>');
-                this.available.push(un);
-                this.unprocessed.splice(index, 1);
-                this.connections -= 1;
-              }
-              resolve();
-            }).on('error', (err) => {
-              if (err.code === 'ETIMEDOUT' || err.code === 'ESOCKETTIMEDOUT') {
-                this.$set(this.processing, un, '<svg class="svg-inline--fa fa-w-20"><use xlink:href="#unknown"></use></svg>');
-                this.unknown.push(un);
-                this.unprocessed.splice(index, 1);
-                this.connections -= 1;
+            request({
+              method: 'POST',
+              uri: 'https://www.instagram.com/accounts/web_create_ajax/attempt/',
+              gzip: true,
+              jar: this.jar,
+              headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36',
+                'accept-language': 'en-US,en;q=0.9',
+                'x-csrftoken': this.csrf,
+                'x-instagram-ajax': '1',
+                'x-requested-with': 'XMLHttpRequest',
+                referer: 'https://www.instagram.com/',
+              },
+              form: {
+                email: 'mom@gmail.com',
+                password: 'hey',
+                username: un,
+                first_name: 'John',
+              },
+            }, (err, res, body) => {
+              if (err) {
+                if (err.code === 'ETIMEDOUT' || err.code === 'ESOCKETTIMEDOUT') {
+                  this.$set(this.processing, un, '<svg class="svg-inline--fa fa-w-20"><use xlink:href="#unknown"></use></svg>');
+                  this.unknown.push(un);
+                  this.unprocessed.splice(index, 1);
+                  this.connections -= 1;
+                } else {
+                  reject(err);
+                }
               } else {
-                reject(err);
+                if (body.includes('This username isn\'t available')) {
+                  this.$set(this.processing, un, '<svg class="svg-inline--fa fa-w-20"><use xlink:href="#unavailable"></use></svg>');
+                  this.unavailable.push(un);
+                  this.unprocessed.splice(index, 1);
+                  this.connections -= 1;
+                } else {
+                  this.$set(this.processing, un, '<svg class="svg-inline--fa fa-w-20"><use xlink:href="#available"></use></svg>');
+                  this.available.push(un);
+                  this.unprocessed.splice(index, 1);
+                  this.connections -= 1;
+                }
+                this.saveCSRF(res.headers);
               }
             });
+          });
+        },
+        saveCSRF(headers) {
+          const raw = headers['set-cookie'];
+          raw.forEach((eh) => {
+            const cookie = new Cookie(eh);
+            if (cookie.key === 'csrftoken') {
+              this.csrf = cookie.value;
+            }
           });
         },
         renderItem(un, ico) {
