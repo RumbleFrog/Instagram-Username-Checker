@@ -58,10 +58,10 @@
                             Unprocessed Usernames
                             <b-tag type="is-link">{{ unprocessed.length }}</b-tag>
                         </b-dropdown-item>
-                        <b-dropdown-item @click="exportCheck(debug)">
-                            Unprocessed Usernames
-                            <b-tag type="is-link">{{ debug.length }}</b-tag>
-                        </b-dropdown-item>
+                        <!--<b-dropdown-item @click="exportCheck(debug)">-->
+                            <!--Processed Usernames-->
+                            <!--<b-tag type="is-link">{{ debug.length }}</b-tag>-->
+                        <!--</b-dropdown-item>-->
                     </b-dropdown>
                 </p>
             </b-field>
@@ -91,7 +91,7 @@
           unavailable: [],
           unknown: [],
           unprocessed: [],
-          debug: [],
+          // debug: [],
           processing: {},
           connections: 0,
           maxConnections: 10,
@@ -137,7 +137,7 @@
         },
         check() {
           this.unprocessed = this.parsedList.slice();
-          this.debug = [];
+          // this.debug = [];
           this.available = [];
           this.unavailable = [];
           this.unknown = [];
@@ -156,7 +156,7 @@
                 this.checking = false;
                 this.askToStop = false;
               }
-            }, 100);
+            }, 150);
           }).catch((err) => {
             this.$toast.open({
               message: `Something went wrong: ${err}`,
@@ -216,7 +216,7 @@
                   reject(err);
                 }
               } else {
-                this.debug.push(body);
+                // this.debug.push(body);
                 if (body.includes('Please wait a few minutes before you try again')) {
                   this.$set(this.processing, un, '<svg class="svg-inline--fa fa-w-20"><use xlink:href="#unknown"></use></svg>');
                   this.unknown.push(un);
