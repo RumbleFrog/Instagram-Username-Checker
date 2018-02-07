@@ -100,11 +100,6 @@
           this.dropFiles.splice(index, 1);
         },
         parse() {
-          setTimeout(() => {
-            if (this.parsing) {
-              this.parse();
-            }
-          }, 2000);
           this.parsedList = [];
           this.parsing = true;
           const promises = [];
