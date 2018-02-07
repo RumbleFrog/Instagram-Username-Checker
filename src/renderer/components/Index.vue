@@ -156,7 +156,9 @@
                 this.checking = false;
                 this.askToStop = false;
                 // new Notification('Finish Checking!', { // eslint-disable-line no-new
-                //   body: `Finished checking ${this.available.length + this.unavailable.length + this.unknown.length} usernames`,
+                //   body: `Finished checking
+                // ${this.available.length + this.unavailable.length + this.unknown.length}
+                // usernames`,
                 // });
               }
             }, 150);
