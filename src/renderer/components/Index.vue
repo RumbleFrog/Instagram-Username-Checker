@@ -132,6 +132,10 @@
         },
         check() {
           this.unprocessed = this.parsedList.slice();
+          this.available = [];
+          this.unavailable = [];
+          this.unknown = [];
+          this.processing = {};
           this.checking = true;
           this.iteration = 0;
           this.connections = 0;
@@ -207,6 +211,7 @@
                 }
               } else {
                 if (body.includes('This username isn\'t available') ||
+                    body.includes('A user with that username already exists') ||
                     body.includes('Your username cannot contain only numbers') ||
                     body.includes('Usernames can only use letters')) {
                   this.$set(this.processing, un, '<svg class="svg-inline--fa fa-w-20"><use xlink:href="#unavailable"></use></svg>');
