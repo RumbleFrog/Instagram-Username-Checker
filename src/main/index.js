@@ -1,4 +1,6 @@
 import { app, BrowserWindow } from 'electron' // eslint-disable-line
+import os from 'os';
+import Raven from 'raven';
 
 /**
  * Set `__static` path to static files in production
@@ -12,6 +14,17 @@ let mainWindow;
 const winURL = process.env.NODE_ENV === 'development'
   ? 'http://localhost:9080'
   : `file://${__dirname}/index.html`;
+
+Raven.config('https://3fa7c53802d2447984ec8bb375330ea0@sentry.io/284137', {
+  captureUnhandledRejections: true,
+  tags: {
+    process: process.type,
+    electron: process.versions.electron,
+    chrome: process.versions.chrome,
+    platform: os.platform(),
+    platform_release: os.release(),
+  },
+}).install();
 
 function createWindow() {
   /**

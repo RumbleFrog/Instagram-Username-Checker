@@ -1,6 +1,7 @@
 import Vue from 'vue';
 import axios from 'axios';
 import Buefy from 'buefy';
+import Raven from 'raven-js';
 import 'buefy/lib/buefy.css';
 
 import fontawesome from '@fortawesome/fontawesome';
@@ -10,6 +11,12 @@ import regular from '@fortawesome/fontawesome-free-regular';
 import App from './App';
 import router from './router';
 import store from './store';
+
+Raven.config('https://3fa7c53802d2447984ec8bb375330ea0@sentry.io/284137').install();
+
+window.addEventListener('unhandledrejection', (event) => {
+  Raven.captureException(event.reason);
+});
 
 fontawesome.library.add(solid.faUpload, regular.faHeart);
 

@@ -1,6 +1,6 @@
 {
   "name": "instagram-checker",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "author": "RumbleFrog <xxlosttechxx@gmail.com>",
   "description": "Checks the availability of instagram usernames",
   "license": "MIT",
@@ -74,6 +74,8 @@
     "axios": "^0.16.1",
     "buefy": "^0.6.3",
     "lodash": "^4.17.5",
+    "raven": "^2.4.0",
+    "raven-js": "^3.22.1",
     "request": "^2.83.0",
     "request-cookies": "^1.1.0",
     "vue": "^2.3.3",
