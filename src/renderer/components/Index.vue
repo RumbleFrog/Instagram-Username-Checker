@@ -206,7 +206,9 @@
                   reject(err);
                 }
               } else {
-                if (body.includes('This username isn\'t available')) {
+                if (body.includes('This username isn\'t available') ||
+                    body.includes('Your username cannot contain only numbers') ||
+                    body.includes('Usernames can only use letters')) {
                   this.$set(this.processing, un, '<svg class="svg-inline--fa fa-w-20"><use xlink:href="#unavailable"></use></svg>');
                   this.unavailable.push(un);
                   this.removeFromUnprocessed(un);
