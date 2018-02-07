@@ -179,7 +179,6 @@
         },
         checkUsername(un) {
           return new Promise((resolve, reject) => {
-            const index = this.unprocessed.indexOf(un);
             this.connections += 1;
             this.$set(this.processing, un, '<svg class="svg-inline--fa fa-w-20"><use xlink:href="#loading"></use></svg>');
             request({
@@ -206,7 +205,7 @@
                 if (err.code === 'ETIMEDOUT' || err.code === 'ESOCKETTIMEDOUT') {
                   this.$set(this.processing, un, '<svg class="svg-inline--fa fa-w-20"><use xlink:href="#unknown"></use></svg>');
                   this.unknown.push(un);
-                  this.unprocessed.splice(index, 1);
+                  this.removeFromUnprocessed(un);
                   this.connections -= 1;
                 } else {
                   reject(err);
@@ -215,18 +214,21 @@
                 if (body.includes('This username isn\'t available')) {
                   this.$set(this.processing, un, '<svg class="svg-inline--fa fa-w-20"><use xlink:href="#unavailable"></use></svg>');
                   this.unavailable.push(un);
-                  this.unprocessed.splice(index, 1);
+                  this.removeFromUnprocessed(un);
                   this.connections -= 1;
                 } else {
                   this.$set(this.processing, un, '<svg class="svg-inline--fa fa-w-20"><use xlink:href="#available"></use></svg>');
                   this.available.push(un);
-                  this.unprocessed.splice(index, 1);
+                  this.removeFromUnprocessed(un);
                   this.connections -= 1;
                 }
                 this.saveCSRF(res.headers);
               }
             });
           });
+        },
+        removeFromUnprocessed(un) {
+          this.unprocessed.splice(this.unprocessed.indexOf(un), 1);
         },
         saveCSRF(headers) {
           const raw = headers['set-cookie'];
