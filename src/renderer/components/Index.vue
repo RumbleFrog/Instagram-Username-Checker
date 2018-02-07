@@ -58,6 +58,10 @@
                             Unprocessed Usernames
                             <b-tag type="is-link">{{ unprocessed.length }}</b-tag>
                         </b-dropdown-item>
+                        <b-dropdown-item @click="exportCheck(debug)">
+                            Unprocessed Usernames
+                            <b-tag type="is-link">{{ debug.length }}</b-tag>
+                        </b-dropdown-item>
                     </b-dropdown>
                 </p>
             </b-field>
@@ -87,6 +91,7 @@
           unavailable: [],
           unknown: [],
           unprocessed: [],
+          debug: [],
           processing: {},
           connections: 0,
           maxConnections: 10,
@@ -132,6 +137,7 @@
         },
         check() {
           this.unprocessed = this.parsedList.slice();
+          this.debug = [];
           this.available = [];
           this.unavailable = [];
           this.unknown = [];
@@ -210,7 +216,13 @@
                   reject(err);
                 }
               } else {
-                if (body.includes('This username isn\'t available') ||
+                this.debug.push(body);
+                if (body.includes('Please wait a few minutes before you try again')) {
+                  this.$set(this.processing, un, '<svg class="svg-inline--fa fa-w-20"><use xlink:href="#unknown"></use></svg>');
+                  this.unknown.push(un);
+                  this.removeFromUnprocessed(un);
+                  this.connections -= 1;
+                } else if (body.includes('This username isn\'t available') ||
                     body.includes('A user with that username already exists') ||
                     body.includes('Your username cannot contain only numbers') ||
                     body.includes('Usernames can only use letters')) {
