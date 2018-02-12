@@ -251,12 +251,14 @@
         },
         saveCSRF(headers) {
           const raw = headers['set-cookie'];
-          raw.forEach((eh) => {
-            const cookie = new Cookie(eh);
-            if (cookie.key === 'csrftoken') {
-              this.csrf = cookie.value;
-            }
-          });
+          if (raw) {
+            raw.forEach((eh) => {
+              const cookie = new Cookie(eh);
+              if (cookie.key === 'csrftoken') {
+                this.csrf = cookie.value;
+              }
+            });
+          }
         },
         renderItem(un, ico) {
           return `${un} ${ico}`;
